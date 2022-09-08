@@ -1,0 +1,17 @@
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.VBox?>
+
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.HBox?>
+
+<VBox fx:controller="com.geekbrains.chatserver.gui.ServerGUI" xmlns:fx="http://javafx.com/fxml" alignment="TOP_CENTER">
+    <HBox fx:id="panelTop">
+        <Button HBox.hgrow="ALWAYS" text="Start" fx:id="btnStart" onAction="#startServer" minWidth="300" maxWidth="300" />
+        <Button HBox.hgrow="ALWAYS" text="Stop" fx:id="btnStop" onAction="#stopServer" minWidth="300" maxWidth="300" />
+    </HBox>
+
+    <HBox>
+        <TextArea HBox.hgrow="ALWAYS" fx:id="log" editable="false" minHeight="275" maxHeight="275"/>
+    </HBox>
+
+</VBox>
