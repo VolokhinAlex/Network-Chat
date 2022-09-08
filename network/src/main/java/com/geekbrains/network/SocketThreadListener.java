@@ -1,7 +1,5 @@
 package com.geekbrains.network;
 
-import javafx.event.ActionEvent;
-
 import java.net.Socket;
 
 public interface SocketThreadListener {

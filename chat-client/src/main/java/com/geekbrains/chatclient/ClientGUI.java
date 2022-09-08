@@ -4,16 +4,15 @@ import com.geekbrains.chatlibrary.Protocol;
 import com.geekbrains.network.SocketThread;
 import com.geekbrains.network.SocketThreadListener;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 import java.io.BufferedWriter;
@@ -31,15 +30,13 @@ import static java.util.Arrays.*;
 public class ClientGUI extends Application implements EventListener,
         Thread.UncaughtExceptionHandler, SocketThreadListener{
 
-    private static final int WIDTH = 400;
-    private static final int HEIGHT = 300;
+    private static final int WIDTH = 650;
+    private static final int HEIGHT = 400;
     private static final String WINDOW_TITLE = "Chat Client";
     private final CheckBox cbAlwaysOnTop = new CheckBox("Always on top");
     private final DateFormat DATE_FORMAT = new SimpleDateFormat("[HH:mm] ");
     private boolean shownIoErrors = false;
     private SocketThread socketThread;
-
-    private Stage primaryStage;
 
     @FXML
     TextArea log;
@@ -48,7 +45,7 @@ public class ClientGUI extends Application implements EventListener,
     TextField tfIpAddress, tfPort, tfLogin, tfMessage, tfChangeNickname;
 
     @FXML
-    HBox panelTop, panelBottom, panelChangeNickName;
+    HBox panelTop, panelBottom, panelTopForChangeNick;
 
     @FXML
     PasswordField tfPassword;
@@ -73,7 +70,7 @@ public class ClientGUI extends Application implements EventListener,
         scrollUsers.setPrefSize(100, 0);
         Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("main.fxml")));
         primaryStage.setTitle(WINDOW_TITLE);
-        primaryStage.setScene(new Scene(root, 650, 400));
+        primaryStage.setScene(new Scene(root, WIDTH, HEIGHT));
         primaryStage.show();
         primaryStage.setAlwaysOnTop(true);
     }
@@ -87,7 +84,12 @@ public class ClientGUI extends Application implements EventListener,
             message = String.format("Exception in thread \"%s\" %s: %s\n\tat %s",
                     thread.getName(), exception.getClass().getCanonicalName(),
                     exception.getMessage(), ste[0]);
-            //Alert.showMessageDialog(this, message, "Exception", JOptionPane.ERROR_MESSAGE);
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+                alert.showAndWait();
+                Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
+                stage.setAlwaysOnTop(true);
+            });
         }
     }
 
@@ -122,8 +124,13 @@ public class ClientGUI extends Application implements EventListener,
 
     private void putLog(String msg) {
         if ("".equals(msg)) return;
-        log.appendText(msg + "\n");
-        //log.positionCaret(log.getDocument().getLength());
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                log.appendText(msg + "\n");
+                log.positionCaret(log.getLength());
+            }
+        });
     }
 
     /**
@@ -163,7 +170,12 @@ public class ClientGUI extends Application implements EventListener,
     public void onSocketStop(SocketThread thread) {
         panelTop.setVisible(true);
         panelBottom.setVisible(false);
+        panelTopForChangeNick.setVisible(false);
         putLog("Socket stopped");
+        Platform.runLater(() -> {
+            ObservableList<String> clients = FXCollections.observableArrayList("");
+            usersList.setItems(clients);
+        });
     }
 
     @FXML
@@ -187,9 +199,9 @@ public class ClientGUI extends Application implements EventListener,
         String msgType = arrayUserData[0];
         switch (msgType) {
             case Protocol.AUTH_ACCEPT -> {
-                //primaryStage.setTitle(WINDOW_TITLE + " nickname: " + arrayUserData[1]);
                 panelTop.setVisible(false);
                 panelBottom.setVisible(true);
+                panelTopForChangeNick.setVisible(true);
             }
             case Protocol.AUTH_DENIED -> putLog("Authorization failed");
             case Protocol.MSG_FORMAT_ERROR -> {
@@ -202,8 +214,10 @@ public class ClientGUI extends Application implements EventListener,
                 String users = message.substring(Protocol.USER_LIST.length() + Protocol.DELIMITER.length());
                 String[] usersArray = users.split(Protocol.DELIMITER);
                 sort(usersArray);
-                //ObservableList<String> clients = FXCollections.observableArrayList(usersArray);
-                //usersList.setItems(clients);
+                Platform.runLater(() -> {
+                    ObservableList<String> clients = FXCollections.observableArrayList(usersArray);
+                    usersList.setItems(clients);
+                });
             }
             default -> throw new RuntimeException("Unknown message type");
         }

@@ -58,9 +58,9 @@ public class SqlClient {
 
     public static String changeNickname(int id, String nickname) {
         String query = String.format("update clients SET nickname=\"%s\" where id=%d", nickname, id);
-        try  {
+        try {
             statement.executeUpdate(query);
-            statement.close(); // Требуется ли использовать блок finally ? для закрытия statement
+            statement.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

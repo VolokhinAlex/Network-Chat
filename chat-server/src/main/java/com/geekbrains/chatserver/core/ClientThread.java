@@ -13,8 +13,6 @@ public class ClientThread extends SocketThread {
     private boolean isAuthorized;
     private boolean isReconnecting;
 
-    private String newNickname;
-
     public ClientThread(SocketThreadListener listener, String name, Socket socket) {
         super(listener, name, socket);
     }

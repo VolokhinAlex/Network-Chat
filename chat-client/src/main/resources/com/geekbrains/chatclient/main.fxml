@@ -7,30 +7,30 @@
 <?import javafx.scene.control.PasswordField?>
 
 <?import javafx.scene.control.ListView?>
-<?import javafx.scene.layout.Pane?>
 <VBox fx:controller="com.geekbrains.chatclient.ClientGUI" xmlns:fx="http://javafx.com/fxml" alignment="center">
     <HBox fx:id="panelTop">
-        <TextField HBox.hgrow="ALWAYS" fx:id="tfIpAddress" promptText="Ip Address" />
-        <TextField HBox.hgrow="ALWAYS" fx:id="tfPort" promptText="Port" />
-        <TextField HBox.hgrow="ALWAYS" fx:id="tfLogin" promptText="Login" />
-        <PasswordField HBox.hgrow="ALWAYS" fx:id="tfPassword" promptText="Password" onAction="#connect" />
-        <Button HBox.hgrow="ALWAYS" text="Login" onAction="#connect" fx:id="btnLogin" />
+        <TextField HBox.hgrow="ALWAYS" fx:id="tfIpAddress" promptText="Ip Address"/>
+        <TextField HBox.hgrow="ALWAYS" fx:id="tfPort" promptText="Port"/>
+        <TextField HBox.hgrow="ALWAYS" fx:id="tfLogin" promptText="Login"/>
+        <PasswordField HBox.hgrow="ALWAYS" fx:id="tfPassword" promptText="Password" onAction="#connect"/>
+        <Button HBox.hgrow="ALWAYS" text="Login" onAction="#connect" fx:id="btnLogin"/>
+    </HBox>
+
+    <HBox fx:id="panelTopForChangeNick" visible="false">
+        <TextField fx:id="tfChangeNickname" promptText="Введите новый nickname" HBox.hgrow="ALWAYS"
+                   onAction="#changeNickname"/>
+        <Button text="Change Nickname" onAction="#changeNickname" fx:id="btnChange"/>
     </HBox>
 
     <HBox VBox.vgrow="ALWAYS">
         <TextArea HBox.hgrow="ALWAYS" fx:id="log" editable="false"/>
-        <ListView fx:id="usersList" minWidth="200" maxWidth="200" />
+        <ListView fx:id="usersList" minWidth="200" maxWidth="200"/>
     </HBox>
 
     <HBox fx:id="panelBottom" visible="false">
-        <Button text="Disconnect" onAction="#disconnect" fx:id="btnDisconnect" alignment="TOP_CENTER"/>
-        <TextField fx:id="tfMessage" promptText="Введите сообщение..." HBox.hgrow="ALWAYS" onAction="#sendMessage" alignment="TOP_CENTER"/>
-        <Button text="Send" onAction="#sendMessage" fx:id="btnSend" alignment="TOP_CENTER"/>
-    </HBox>
-
-    <HBox fx:id="panelChangeNickName">
-        <TextField fx:id="tfChangeNickname" promptText="Введите новый nickname" HBox.hgrow="ALWAYS" onAction="#changeNickname" alignment="BOTTOM_CENTER" />
-        <Button text="Change Nickname" onAction="#changeNickname" fx:id="btnChange" alignment="BOTTOM_CENTER" />
+        <Button text="Disconnect" onAction="#disconnect" fx:id="btnDisconnect"/>
+        <TextField fx:id="tfMessage" promptText="Введите сообщение..." HBox.hgrow="ALWAYS" onAction="#sendMessage"/>
+        <Button text="Send" onAction="#sendMessage" fx:id="btnSend"/>
     </HBox>
 
 </VBox>

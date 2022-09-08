@@ -9,9 +9,7 @@ public class Protocol {
     public static final String MSG_FORMAT_ERROR = "/msg_format_error";
     public static final String TYPE_BROADCAST = "/bcast";
     public static final String USER_LIST = "/user_list";
-
     public static final String CHANGE_NICKNAME = "/change_nick";
-
     public static final String USER_BROADCAST = "/user_bcast";
 
     public static String getAuthRequest(String login, String password) {

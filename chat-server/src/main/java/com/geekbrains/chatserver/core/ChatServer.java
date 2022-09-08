@@ -5,13 +5,11 @@ import com.geekbrains.network.ServerSocketThread;
 import com.geekbrains.network.ServerSocketThreadListener;
 import com.geekbrains.network.SocketThread;
 import com.geekbrains.network.SocketThreadListener;
-import javafx.event.ActionEvent;
 
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Vector;
 
 public class ChatServer implements ServerSocketThreadListener, SocketThreadListener {
@@ -72,7 +70,8 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     }
 
     @Override
-    public void onServerTimeout(ServerSocketThread thread, ServerSocket server) {}
+    public void onServerTimeout(ServerSocketThread thread, ServerSocket server) {
+    }
 
     @Override
     public void onSocketAccepted(ServerSocketThread thread, ServerSocket server, Socket socket) {
