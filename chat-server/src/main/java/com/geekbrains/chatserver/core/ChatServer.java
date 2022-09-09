@@ -124,11 +124,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         switch (msgType) {
             case Protocol.USER_BROADCAST ->
                     sendToAllAuthorizedClients(Protocol.getTypeBroadcast(user.getNickname(), msgArray[1]));
-            case Protocol.CHANGE_NICKNAME -> {
-                SqlClient.changeNickname(user.getNickname(), msgArray[1]);
-                sendToAllAuthorizedClients(Protocol.getTypeBroadcast("Server", user.getNickname() + " changed nickname to " + msgArray[1]));
-                putLog(user.getNickname() + " changed nickname to " + msgArray[1]);
-            }
+            case Protocol.CHANGE_NICKNAME -> changeNickname(user, msgArray);
             default -> user.msgFormatError(message);
         }
     }
@@ -186,5 +182,17 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
             }
         }
         return null;
+    }
+
+    private void changeNickname(ClientThread user, String[] msgArray) {
+        if (!(SqlClient.changeNickname(user.getNickname(), msgArray[1]))) {
+            user.msgFormatError(String.format("You failed to change your nickname to %s!", msgArray[1]));
+            putLog(String.format("%s failed to changed nickname to %s!", user.getNickname(), msgArray[1]));
+        } else {
+            SqlClient.changeNickname(user.getNickname(), msgArray[1]);
+            sendToAllAuthorizedClients(Protocol.getTypeBroadcast("Server", user.getNickname() + " changed nickname to " + msgArray[1]));
+            sendToAllAuthorizedClients(Protocol.getUserList(getUsers()));
+            putLog(user.getNickname() + " changed nickname to " + msgArray[1]);
+        }
     }
 }

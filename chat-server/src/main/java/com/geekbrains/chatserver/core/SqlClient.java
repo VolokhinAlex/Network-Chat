@@ -63,6 +63,7 @@ public class SqlClient {
 
     public static boolean changeNickname(String oldNickname, String newNickname) {
         try {
+            if (isAlreadyThereNickname(newNickname)) return false;
             preparedStatement = connection.prepareStatement("update clients SET nickname=? where nickname=?");
             preparedStatement.setString(1, newNickname);
             preparedStatement.setString(2, oldNickname);
@@ -81,5 +82,15 @@ public class SqlClient {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static boolean isAlreadyThereNickname(String nickname) {
+        String query = String.format("select nickname from clients where nickname=\"%s\"", nickname);
+        try (ResultSet set = statement.executeQuery(query)) {
+            return set.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
