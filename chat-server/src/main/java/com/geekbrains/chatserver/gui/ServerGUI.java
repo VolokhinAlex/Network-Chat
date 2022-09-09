@@ -4,6 +4,7 @@ import com.geekbrains.chatserver.core.ChatServer;
 import com.geekbrains.chatserver.core.ChatServerListener;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -11,6 +12,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import java.util.EventListener;
 import java.util.Objects;
@@ -47,6 +49,7 @@ public class ServerGUI extends Application implements EventListener,
         primaryStage.setResizable(false);
         primaryStage.setScene(new Scene(root, WIDTH, HEIGHT));
         primaryStage.show();
+        primaryStage.setOnCloseRequest(e -> System.exit(1));
     }
 
     public void startServer() {

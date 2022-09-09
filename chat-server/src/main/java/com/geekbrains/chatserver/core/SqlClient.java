@@ -8,6 +8,7 @@ public class SqlClient {
 
     private static Connection connection;
     private static Statement statement;
+    private static PreparedStatement preparedStatement;
 
     public static void connect() {
         try {
@@ -44,27 +45,33 @@ public class SqlClient {
     }
 
     public static Integer getId(String login, String password, String nickname) {
-        String query = String.format("select id from clients where login=\"%s\" and password=\"%s\" and nickname=\"%s\"",
-                login, password, nickname);
-        try (ResultSet set = statement.executeQuery(query)) {
-            if (set.next()) {
-                return set.getInt("id");
+        try {
+            preparedStatement = connection.prepareStatement("select id from clients where login=? and password=? and nickname=?");
+            preparedStatement.setString(1, login);
+            preparedStatement.setString(2, password);
+            preparedStatement.setString(3, nickname);
+            ResultSet rs = preparedStatement.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("id");
             }
+            preparedStatement.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
         return null;
     }
 
-    public static String changeNickname(int id, String nickname) {
-        String query = String.format("update clients SET nickname=\"%s\" where id=%d", nickname, id);
+    public static boolean changeNickname(String oldNickname, String newNickname) {
         try {
-            statement.executeUpdate(query);
-            statement.close();
+            preparedStatement = connection.prepareStatement("update clients SET nickname=? where nickname=?");
+            preparedStatement.setString(1, newNickname);
+            preparedStatement.setString(2, oldNickname);
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+            return true;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return null;
     }
 
     public static void disconnect() {

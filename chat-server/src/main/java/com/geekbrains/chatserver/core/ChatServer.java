@@ -19,9 +19,6 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     private Vector<SocketThread> users;
 
     private ChatServerListener listener;
-
-    private int id;
-
     public ChatServer(ChatServerListener listener) {
         this.listener = listener;
         users = new Vector<>();
@@ -128,7 +125,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
             case Protocol.USER_BROADCAST ->
                     sendToAllAuthorizedClients(Protocol.getTypeBroadcast(user.getNickname(), msgArray[1]));
             case Protocol.CHANGE_NICKNAME -> {
-                SqlClient.changeNickname(id, msgArray[1]);
+                SqlClient.changeNickname(user.getNickname(), msgArray[1]);
                 sendToAllAuthorizedClients(Protocol.getTypeBroadcast("Server", user.getNickname() + " changed nickname to " + msgArray[1]));
                 putLog(user.getNickname() + " changed nickname to " + msgArray[1]);
             }
@@ -146,15 +143,13 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         String password = arrayUser[2];
         String nickname = SqlClient.getNickname(login, password);
         if (nickname == null) {
-            nickname = arrayUser[1];
-            SqlClient.registration(login, password, nickname);
-            user.authAccept(nickname);
-//            putLog("Invalid credentials attempt for login = " + login);
-//            user.authFail();
-//            return;
+            putLog("Invalid credentials attempt for login = " + login);
+            user.authFail();
+            return;
         } else {
             ClientThread oldUser = findClientByNickname(nickname);
             user.authAccept(nickname);
+            user.getData(login, password);
             if (oldUser == null) {
                 sendToAllAuthorizedClients(Protocol.getTypeBroadcast("Server", nickname + " connected"));
             } else {
@@ -162,7 +157,6 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
                 users.remove(oldUser);
             }
         }
-        id = SqlClient.getId(login, password, nickname);
         sendToAllAuthorizedClients(Protocol.getUserList(getUsers()));
     }
 

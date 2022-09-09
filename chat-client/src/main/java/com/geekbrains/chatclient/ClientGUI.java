@@ -12,15 +12,11 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
-
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -28,7 +24,7 @@ import java.util.*;
 import static java.util.Arrays.*;
 
 public class ClientGUI extends Application implements EventListener,
-        Thread.UncaughtExceptionHandler, SocketThreadListener{
+        Thread.UncaughtExceptionHandler, SocketThreadListener {
 
     private static final int WIDTH = 650;
     private static final int HEIGHT = 400;
@@ -45,7 +41,10 @@ public class ClientGUI extends Application implements EventListener,
     TextField tfIpAddress, tfPort, tfLogin, tfMessage, tfChangeNickname;
 
     @FXML
-    HBox panelTop, panelBottom, panelTopForChangeNick;
+    HBox panelBottom, panelTopForChangeNick, panelLogin;
+
+    @FXML
+    GridPane panelTop;
 
     @FXML
     PasswordField tfPassword;
@@ -55,8 +54,6 @@ public class ClientGUI extends Application implements EventListener,
 
     @FXML
     Button btnLogin, btnDisconnect, btnSend, btnChange;
-
-    private ComboBox dropDownUsersList = new ComboBox<>();
 
     public static void main(String[] args) {
         launch(args);
@@ -68,11 +65,13 @@ public class ClientGUI extends Application implements EventListener,
         ScrollPane scrollLog = new ScrollPane(log);
         ScrollPane scrollUsers = new ScrollPane(usersList);
         scrollUsers.setPrefSize(100, 0);
+        primaryStage.setResizable(false);
         Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("main.fxml")));
         primaryStage.setTitle(WINDOW_TITLE);
         primaryStage.setScene(new Scene(root, WIDTH, HEIGHT));
         primaryStage.show();
         primaryStage.setAlwaysOnTop(true);
+        primaryStage.setOnCloseRequest(e -> System.exit(1));
     }
 
     private void showException(Thread thread, Throwable exception) {
@@ -98,28 +97,6 @@ public class ClientGUI extends Application implements EventListener,
         exception.printStackTrace();
         showException(thread, exception);
         System.exit(1);
-    }
-
-    /**
-     * The method creates a new log file, in which after each message there is a record.
-     * Created a file named LYearMonthDay.log (Example: L20220818.log)
-     *
-     * @throws IOException - file exceptions.
-     */
-
-    private void writingLogToFile(String msg, String username) {
-        try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
-            String date = simpleDateFormat.format(new Date());
-            BufferedWriter writeLog = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("L" + date + ".log"), StandardCharsets.UTF_8));
-            writeLog.write(username + ": " + msg);
-            writeLog.flush();
-        } catch (IOException e) {
-            if (!shownIoErrors) {
-                shownIoErrors = true;
-                showException(Thread.currentThread(), e);
-            }
-        }
     }
 
     private void putLog(String msg) {
@@ -168,7 +145,7 @@ public class ClientGUI extends Application implements EventListener,
 
     @Override
     public void onSocketStop(SocketThread thread) {
-        panelTop.setVisible(true);
+        panelLogin.setVisible(true);
         panelBottom.setVisible(false);
         panelTopForChangeNick.setVisible(false);
         putLog("Socket stopped");
@@ -199,7 +176,7 @@ public class ClientGUI extends Application implements EventListener,
         String msgType = arrayUserData[0];
         switch (msgType) {
             case Protocol.AUTH_ACCEPT -> {
-                panelTop.setVisible(false);
+                panelLogin.setVisible(false);
                 panelBottom.setVisible(true);
                 panelTopForChangeNick.setVisible(true);
             }
