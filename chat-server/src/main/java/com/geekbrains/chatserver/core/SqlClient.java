@@ -93,4 +93,17 @@ public class SqlClient {
         }
         return false;
     }
+
+    public static void savingUserMessages(int uid, String nickname, String message, long dateTime) {
+        try {
+            preparedStatement = connection.prepareStatement("INSERT INTO messages(uid, nickname, message, date_time) VALUES(?, ?, ?, ?);");
+            preparedStatement.setInt(1, uid);
+            preparedStatement.setString(2, nickname);
+            preparedStatement.setString(3, message);
+            preparedStatement.setLong(4, dateTime);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }

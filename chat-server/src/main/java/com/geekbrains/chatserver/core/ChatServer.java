@@ -10,6 +10,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.Vector;
 
 public class ChatServer implements ServerSocketThreadListener, SocketThreadListener {
@@ -122,8 +127,10 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         String[] msgArray = message.split(Protocol.DELIMITER);
         String msgType = msgArray[0];
         switch (msgType) {
-            case Protocol.USER_BROADCAST ->
-                    sendToAllAuthorizedClients(Protocol.getTypeBroadcast(user.getNickname(), msgArray[1]));
+            case Protocol.USER_BROADCAST -> {
+                sendToAllAuthorizedClients(Protocol.getTypeBroadcast(user.getNickname(), msgArray[1]));
+                SqlClient.savingUserMessages(SqlClient.getId(user.getLogin(), user.getPassword(), user.getNickname()), user.getNickname(), msgArray[1], System.currentTimeMillis() / 1000L);
+            }
             case Protocol.CHANGE_NICKNAME -> changeNickname(user, msgArray);
             default -> user.msgFormatError(message);
         }

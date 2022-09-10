@@ -7,6 +7,7 @@ module com.geekbrains.chatclient {
     requires com.almasb.fxgl.all;
     requires com.geekbrains.network;
     requires com.geekbrains.chatlibrary;
+    requires java.desktop;
 
     opens com.geekbrains.chatclient to javafx.fxml;
     exports com.geekbrains.chatclient;
