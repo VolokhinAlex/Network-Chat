@@ -19,6 +19,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     private Vector<SocketThread> users;
 
     private ChatServerListener listener;
+    private final int LAST_MESSAGE_COUNT = 10;
     public ChatServer(ChatServerListener listener) {
         this.listener = listener;
         users = new Vector<>();
@@ -101,6 +102,10 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     @Override
     public synchronized void onSocketReady(SocketThread thread, Socket socket) {
         users.add(thread);
+        String[] lastMessages = SqlClient.showLastMessages(LAST_MESSAGE_COUNT).split(SqlClient.DELIMITER);
+        for (String lastMessage : lastMessages) {
+            thread.sendMessage(Protocol.getLastMessages(lastMessage));
+        }
     }
 
     @Override
@@ -124,7 +129,8 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         switch (msgType) {
             case Protocol.USER_BROADCAST -> {
                 sendToAllAuthorizedClients(Protocol.getTypeBroadcast(user.getNickname(), msgArray[1]));
-                SqlClient.savingUserMessages(SqlClient.getId(user.getLogin(), user.getPassword(), user.getNickname()), user.getNickname(), msgArray[1], System.currentTimeMillis() / 1000L);
+                SqlClient.savingUserMessages(SqlClient.getId(user.getLogin(), user.getPassword(), user.getNickname()),
+                        user.getNickname(), msgArray[1], System.currentTimeMillis() / 1000L);
             }
             case Protocol.CHANGE_NICKNAME -> changeNickname(user, msgArray);
             default -> user.msgFormatError(message);

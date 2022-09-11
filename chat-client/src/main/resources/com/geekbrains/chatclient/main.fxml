@@ -9,6 +9,7 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.layout.GridPane?>
 <VBox fx:controller="com.geekbrains.chatclient.ClientGUI" xmlns:fx="http://javafx.com/fxml" alignment="center">
+
     <GridPane fx:id="panelTop">
 
         <HBox fx:id="panelLogin" minWidth="650" maxWidth="650">

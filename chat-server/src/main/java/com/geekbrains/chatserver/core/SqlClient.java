@@ -9,6 +9,7 @@ public class SqlClient {
     private static Connection connection;
     private static Statement statement;
     private static PreparedStatement preparedStatement;
+    public static final String DELIMITER = "±";
 
     public static void connect() {
         try {
@@ -102,8 +103,27 @@ public class SqlClient {
             preparedStatement.setString(3, message);
             preparedStatement.setLong(4, dateTime);
             preparedStatement.executeUpdate();
+            preparedStatement.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public static String showLastMessages(int count) {
+        try {
+            preparedStatement = connection.prepareStatement("SELECT * FROM messages ORDER BY id DESC LIMIT ?;");
+            preparedStatement.setInt(1, count);
+            ResultSet set = preparedStatement.executeQuery();
+            StringBuffer stringBuffer = new StringBuffer();
+            while (set.next()) {
+                stringBuffer.append(set.getString("nickname") + ": " + set.getString("message")).append(DELIMITER);
+            }
+            preparedStatement.close();
+            set.close();
+            return stringBuffer.toString();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

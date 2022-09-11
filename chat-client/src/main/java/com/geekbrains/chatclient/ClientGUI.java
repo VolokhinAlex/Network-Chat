@@ -36,9 +36,8 @@ public class ClientGUI extends Application implements EventListener,
     private static final int WIDTH = 650;
     private static final int HEIGHT = 400;
     private static final String WINDOW_TITLE = "Chat Client";
-    private final CheckBox cbAlwaysOnTop = new CheckBox("Always on top");
+    private static Stage stage;
     private final DateFormat DATE_FORMAT = new SimpleDateFormat("[HH:mm] ");
-    private boolean shownIoErrors = false;
     private SocketThread socketThread;
 
     @FXML
@@ -68,6 +67,7 @@ public class ClientGUI extends Application implements EventListener,
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        this.stage = primaryStage;
         Thread.setDefaultUncaughtExceptionHandler(this);
         ScrollPane scrollLog = new ScrollPane(log);
         ScrollPane scrollUsers = new ScrollPane(usersList);
@@ -158,6 +158,7 @@ public class ClientGUI extends Application implements EventListener,
         panelTopForChangeNick.setVisible(false);
         putLog("Socket stopped");
         Platform.runLater(() -> {
+            stage.setTitle(WINDOW_TITLE);
             ObservableList<String> clients = FXCollections.observableArrayList("");
             usersList.setItems(clients);
         });
@@ -184,6 +185,7 @@ public class ClientGUI extends Application implements EventListener,
         String msgType = arrayUserData[0];
         switch (msgType) {
             case Protocol.AUTH_ACCEPT -> {
+                Platform.runLater(() -> stage.setTitle(WINDOW_TITLE + " nickname: " + arrayUserData[1]));
                 panelLogin.setVisible(false);
                 panelBottom.setVisible(true);
                 panelTopForChangeNick.setVisible(true);
@@ -204,6 +206,8 @@ public class ClientGUI extends Application implements EventListener,
                     usersList.setItems(clients);
                 });
             }
+            case Protocol.LAST_MESSAGES ->
+                putLog(arrayUserData[1]);
             default -> throw new RuntimeException("Unknown message type");
         }
     }
