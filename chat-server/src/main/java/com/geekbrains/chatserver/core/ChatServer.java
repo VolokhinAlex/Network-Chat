@@ -20,6 +20,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
 
     private ChatServerListener listener;
     private final int LAST_MESSAGE_COUNT = 10;
+
     public ChatServer(ChatServerListener listener) {
         this.listener = listener;
         users = new Vector<>();
@@ -102,10 +103,6 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     @Override
     public synchronized void onSocketReady(SocketThread thread, Socket socket) {
         users.add(thread);
-        String[] lastMessages = SqlClient.showLastMessages(LAST_MESSAGE_COUNT).split(SqlClient.DELIMITER);
-        for (String lastMessage : lastMessages) {
-            thread.sendMessage(Protocol.getLastMessages(lastMessage));
-        }
     }
 
     @Override
@@ -162,11 +159,12 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
             }
         }
         sendToAllAuthorizedClients(Protocol.getUserList(getUsers()));
+        printLastMessage(user, LAST_MESSAGE_COUNT);
     }
 
     private void sendToAllAuthorizedClients(String msg) {
-        for (int i = 0; i < users.size(); i++) {
-            ClientThread recipient = (ClientThread) users.get(i);
+        for (SocketThread user : users) {
+            ClientThread recipient = (ClientThread) user;
             if (!recipient.isAuthorized()) continue;
             recipient.sendMessage(msg);
         }
@@ -182,8 +180,8 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     }
 
     private synchronized ClientThread findClientByNickname(String nickname) {
-        for (int i = 0; i < users.size(); i++) {
-            ClientThread user = (ClientThread) users.get(i);
+        for (SocketThread socketThread : users) {
+            ClientThread user = (ClientThread) socketThread;
             if (!user.isAuthorized()) continue;
             if (user.getNickname().equals(nickname)) {
                 return user;
@@ -202,5 +200,22 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
             sendToAllAuthorizedClients(Protocol.getUserList(getUsers()));
             putLog(user.getNickname() + " changed nickname to " + msgArray[1]);
         }
+    }
+
+    private void printLastMessage(SocketThread thread, int lastMessageCount) {
+        String[] lastMessages = SqlClient.showLastMessages(lastMessageCount).split(SqlClient.DELIMITER);
+        invertArray(lastMessages);
+        for (String lastMessage : lastMessages) {
+            thread.sendMessage(Protocol.getLastMessages(lastMessage));
+        }
+    }
+
+    private <T> T[] invertArray(T[] array) {
+        for (int i = 0; i < array.length / 2; i++) {
+            T tmp = array[i];
+            array[i] = array[array.length - i - 1];
+            array[array.length - i - 1] = tmp;
+        }
+        return array;
     }
 }

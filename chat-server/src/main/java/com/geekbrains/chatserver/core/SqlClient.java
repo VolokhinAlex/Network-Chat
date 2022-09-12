@@ -9,7 +9,7 @@ public class SqlClient {
     private static Connection connection;
     private static Statement statement;
     private static PreparedStatement preparedStatement;
-    public static final String DELIMITER = "±";
+    public static final String DELIMITER = "Â±";
 
     public static void connect() {
         try {
