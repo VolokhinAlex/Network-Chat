@@ -32,7 +32,7 @@ public class Protocol {
     }
 
     public static String getMsgFormatError(String message) {
-        return  MSG_FORMAT_ERROR + DELIMITER + message;
+        return MSG_FORMAT_ERROR + DELIMITER + message;
     }
 
     public static String getUserList(String user) {
@@ -47,8 +47,8 @@ public class Protocol {
         return CHANGE_NICKNAME + DELIMITER + nickname;
     }
 
-    public static String getPrivateUserBroadcast(String userFrom, String message) {
-        return PRIVATE_USER_BROADCAST + DELIMITER + userFrom + DELIMITER + message;
+    public static String getPrivateUserBroadcast(String userTo, String message) {
+        return PRIVATE_USER_BROADCAST + DELIMITER + userTo + DELIMITER + message;
     }
 
     public static String getLastMessages(String message) {
