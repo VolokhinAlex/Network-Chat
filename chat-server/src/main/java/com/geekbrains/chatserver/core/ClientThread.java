@@ -10,10 +10,10 @@ import java.net.Socket;
 public class ClientThread extends SocketThread {
 
     private String nickname;
+    private String login;
+    private String password;
     private boolean isAuthorized;
     private boolean isReconnecting;
-
-    private String newNickname;
 
     public ClientThread(SocketThreadListener listener, String name, Socket socket) {
         super(listener, name, socket);
@@ -21,6 +21,14 @@ public class ClientThread extends SocketThread {
 
     public String getNickname() {
         return nickname;
+    }
+
+    public String getLogin() {
+        return login;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     public boolean isAuthorized() {
@@ -36,6 +44,10 @@ public class ClientThread extends SocketThread {
         return isReconnecting;
     }
 
+    void getData(String login, String password) {
+        this.login = login;
+        this.password = password;
+    }
 
     void authAccept(String nickname) {
         isAuthorized = true;
@@ -52,4 +64,5 @@ public class ClientThread extends SocketThread {
         sendMessage(Protocol.getMsgFormatError(msg));
         close();
     }
+
 }

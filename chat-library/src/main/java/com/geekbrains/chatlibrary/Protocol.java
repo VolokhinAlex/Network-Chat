@@ -9,10 +9,10 @@ public class Protocol {
     public static final String MSG_FORMAT_ERROR = "/msg_format_error";
     public static final String TYPE_BROADCAST = "/bcast";
     public static final String USER_LIST = "/user_list";
-
     public static final String CHANGE_NICKNAME = "/change_nick";
-
     public static final String USER_BROADCAST = "/user_bcast";
+    public static final String PRIVATE_USER_BROADCAST = "/private_user_bcast";
+    public static final String LAST_MESSAGES = "/last_msg";
 
     public static String getAuthRequest(String login, String password) {
         return AUTH_REQUEST + DELIMITER + login + DELIMITER + password;
@@ -45,5 +45,13 @@ public class Protocol {
 
     public static String getChangeNickname(String nickname) {
         return CHANGE_NICKNAME + DELIMITER + nickname;
+    }
+
+    public static String getPrivateUserBroadcast(String userFrom, String message) {
+        return PRIVATE_USER_BROADCAST + DELIMITER + userFrom + DELIMITER + message;
+    }
+
+    public static String getLastMessages(String message) {
+        return LAST_MESSAGES + DELIMITER + message;
     }
 }

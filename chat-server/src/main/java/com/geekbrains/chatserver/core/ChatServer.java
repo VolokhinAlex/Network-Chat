@@ -5,13 +5,11 @@ import com.geekbrains.network.ServerSocketThread;
 import com.geekbrains.network.ServerSocketThreadListener;
 import com.geekbrains.network.SocketThread;
 import com.geekbrains.network.SocketThreadListener;
-import javafx.event.ActionEvent;
 
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Vector;
 
 public class ChatServer implements ServerSocketThreadListener, SocketThreadListener {
@@ -21,8 +19,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     private Vector<SocketThread> users;
 
     private ChatServerListener listener;
-
-    private int id;
+    private final int LAST_MESSAGE_COUNT = 10;
 
     public ChatServer(ChatServerListener listener) {
         this.listener = listener;
@@ -72,7 +69,8 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     }
 
     @Override
-    public void onServerTimeout(ServerSocketThread thread, ServerSocket server) {}
+    public void onServerTimeout(ServerSocketThread thread, ServerSocket server) {
+    }
 
     @Override
     public void onSocketAccepted(ServerSocketThread thread, ServerSocket server, Socket socket) {
@@ -126,13 +124,12 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         String[] msgArray = message.split(Protocol.DELIMITER);
         String msgType = msgArray[0];
         switch (msgType) {
-            case Protocol.USER_BROADCAST ->
-                    sendToAllAuthorizedClients(Protocol.getTypeBroadcast(user.getNickname(), msgArray[1]));
-            case Protocol.CHANGE_NICKNAME -> {
-                SqlClient.changeNickname(id, msgArray[1]);
-                sendToAllAuthorizedClients(Protocol.getTypeBroadcast("Server", user.getNickname() + " changed nickname to " + msgArray[1]));
-                putLog(user.getNickname() + " changed nickname to " + msgArray[1]);
+            case Protocol.USER_BROADCAST -> {
+                sendToAllAuthorizedClients(Protocol.getTypeBroadcast(user.getNickname(), msgArray[1]));
+                SqlClient.savingUserMessages(SqlClient.getId(user.getLogin(), user.getPassword(), user.getNickname()),
+                        user.getNickname(), msgArray[1], System.currentTimeMillis() / 1000L);
             }
+            case Protocol.CHANGE_NICKNAME -> changeNickname(user, msgArray);
             default -> user.msgFormatError(message);
         }
     }
@@ -147,15 +144,13 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         String password = arrayUser[2];
         String nickname = SqlClient.getNickname(login, password);
         if (nickname == null) {
-            nickname = arrayUser[1];
-            SqlClient.registration(login, password, nickname);
-            user.authAccept(nickname);
-//            putLog("Invalid credentials attempt for login = " + login);
-//            user.authFail();
-//            return;
+            putLog("Invalid credentials attempt for login = " + login);
+            user.authFail();
+            return;
         } else {
             ClientThread oldUser = findClientByNickname(nickname);
             user.authAccept(nickname);
+            user.getData(login, password);
             if (oldUser == null) {
                 sendToAllAuthorizedClients(Protocol.getTypeBroadcast("Server", nickname + " connected"));
             } else {
@@ -163,13 +158,13 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
                 users.remove(oldUser);
             }
         }
-        id = SqlClient.getId(login, password, nickname);
         sendToAllAuthorizedClients(Protocol.getUserList(getUsers()));
+        printLastMessage(user, LAST_MESSAGE_COUNT);
     }
 
     private void sendToAllAuthorizedClients(String msg) {
-        for (int i = 0; i < users.size(); i++) {
-            ClientThread recipient = (ClientThread) users.get(i);
+        for (SocketThread user : users) {
+            ClientThread recipient = (ClientThread) user;
             if (!recipient.isAuthorized()) continue;
             recipient.sendMessage(msg);
         }
@@ -185,13 +180,42 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     }
 
     private synchronized ClientThread findClientByNickname(String nickname) {
-        for (int i = 0; i < users.size(); i++) {
-            ClientThread user = (ClientThread) users.get(i);
+        for (SocketThread socketThread : users) {
+            ClientThread user = (ClientThread) socketThread;
             if (!user.isAuthorized()) continue;
             if (user.getNickname().equals(nickname)) {
                 return user;
             }
         }
         return null;
+    }
+
+    private void changeNickname(ClientThread user, String[] msgArray) {
+        if (!(SqlClient.changeNickname(user.getNickname(), msgArray[1]))) {
+            user.msgFormatError(String.format("You failed to change your nickname to %s!", msgArray[1]));
+            putLog(String.format("%s failed to changed nickname to %s!", user.getNickname(), msgArray[1]));
+        } else {
+            SqlClient.changeNickname(user.getNickname(), msgArray[1]);
+            sendToAllAuthorizedClients(Protocol.getTypeBroadcast("Server", user.getNickname() + " changed nickname to " + msgArray[1]));
+            sendToAllAuthorizedClients(Protocol.getUserList(getUsers()));
+            putLog(user.getNickname() + " changed nickname to " + msgArray[1]);
+        }
+    }
+
+    private void printLastMessage(SocketThread thread, int lastMessageCount) {
+        String[] lastMessages = SqlClient.showLastMessages(lastMessageCount).split(SqlClient.DELIMITER);
+        invertArray(lastMessages);
+        for (String lastMessage : lastMessages) {
+            thread.sendMessage(Protocol.getLastMessages(lastMessage));
+        }
+    }
+
+    private <T> T[] invertArray(T[] array) {
+        for (int i = 0; i < array.length / 2; i++) {
+            T tmp = array[i];
+            array[i] = array[array.length - i - 1];
+            array[array.length - i - 1] = tmp;
+        }
+        return array;
     }
 }

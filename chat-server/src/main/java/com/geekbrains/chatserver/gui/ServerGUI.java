@@ -3,6 +3,7 @@ package com.geekbrains.chatserver.gui;
 import com.geekbrains.chatserver.core.ChatServer;
 import com.geekbrains.chatserver.core.ChatServerListener;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -21,6 +22,7 @@ public class ServerGUI extends Application implements EventListener,
 
     private static final int WIDTH = 600;
     private static final int HEIGHT = 300;
+    private final int port = 8189;
 
     private final ChatServer chatServer = new ChatServer(this);
 
@@ -39,6 +41,7 @@ public class ServerGUI extends Application implements EventListener,
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        Thread.setDefaultUncaughtExceptionHandler(this);
         ScrollPane scrollLog = new ScrollPane(log);
         primaryStage.setAlwaysOnTop(true);
         Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("/com/geekbrains/chatserver/main.fxml")));
@@ -46,35 +49,16 @@ public class ServerGUI extends Application implements EventListener,
         primaryStage.setResizable(false);
         primaryStage.setScene(new Scene(root, WIDTH, HEIGHT));
         primaryStage.show();
+        primaryStage.setOnCloseRequest(e -> System.exit(1));
     }
 
-//    private ServerGUI() {
-//        Thread.setDefaultUncaughtExceptionHandler(this);
-//        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-//        setBounds(POS_X, POS_Y, WIDTH, HEIGHT);
-//        setResizable(false);
-//        setTitle("Chat Server");
-//        setAlwaysOnTop(true);
-//        btnStart.addActionListener(this);
-//        btnStop.addActionListener(this);
-//        log.setEditable(false);
-//        log.setLineWrap(true);
-//        JScrollPane scrollLog = new JScrollPane(log);
-//        panelTop.add(btnStart);
-//        panelTop.add(btnStop);
-//        add(panelTop, BorderLayout.NORTH);
-//        add(scrollLog, BorderLayout.CENTER);
-//        setVisible(true);
-//    }
-
     public void startServer() {
-        chatServer.start(8189);
+        chatServer.start(port);
     }
 
     public void stopServer() {
         chatServer.stop();
     }
-
 
     private void showException(Thread thread, Throwable exception) {
         String message;
@@ -85,7 +69,12 @@ public class ServerGUI extends Application implements EventListener,
             message = String.format("Exception in thread \"%s\" %s: %s\n\tat %s",
                     thread.getName(), exception.getClass().getCanonicalName(),
                     exception.getMessage(), ste[0]);
-            //JOptionPane.showMessageDialog(this, message, "Exception", JOptionPane.ERROR_MESSAGE);
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+                alert.showAndWait();
+                Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
+                stage.setAlwaysOnTop(true);
+            });
         }
     }
 
@@ -99,7 +88,11 @@ public class ServerGUI extends Application implements EventListener,
     @Override
     public void onChatServerMessage(String msg) {
         if ("".equals(msg)) return;
-        log.appendText(msg + "\n");
-        //log.setCaretPosition(log.getDocument().getLength());
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                log.appendText(msg + "\n");
+            }
+        });
     }
 }
