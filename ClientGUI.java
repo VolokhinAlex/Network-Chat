@@ -30,7 +30,6 @@ import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.List;
 
 import static java.util.Arrays.*;
 
@@ -85,6 +84,13 @@ public class ClientGUI extends Application implements EventListener,
         primaryStage.show();
         primaryStage.setAlwaysOnTop(true);
         primaryStage.setOnCloseRequest(e -> System.exit(1));
+    }
+
+    private void setEmptyCellUserList() {
+        usersList.setOnMouseClicked(event -> {
+            int indexElement = usersList.getSelectionModel().getSelectedIndex();
+            usersList.getSelectionModel().clearSelection(indexElement);
+        });
     }
 
     private void showException(Thread thread, Throwable exception) {
@@ -214,7 +220,7 @@ public class ClientGUI extends Application implements EventListener,
 
     @Override
     public void onSocketStart(SocketThread thread, Socket socket) {
-        putLog("Socket started");
+        putLog(String.format("%s %s", DATE_FORMAT.format(new Date()), "Socket started"));
     }
 
     @Override
@@ -222,7 +228,7 @@ public class ClientGUI extends Application implements EventListener,
         panelLogin.setVisible(true);
         panelBottom.setVisible(false);
         panelTopForChangeNick.setVisible(false);
-        putLog("Socket stopped");
+        putLog(String.format("%s %s", DATE_FORMAT.format(new Date()), "Socket stopped"));
         Platform.runLater(() -> {
             stage.setTitle(WINDOW_TITLE);
             ObservableList<String> clients = FXCollections.observableArrayList("");
@@ -237,7 +243,8 @@ public class ClientGUI extends Application implements EventListener,
 
     @Override
     public void onSocketReady(SocketThread thread, Socket socket) {
-        putLog("Socket is ready");
+        putLog(String.format("%s %s", DATE_FORMAT.format(new Date()), "Socket is ready"));
+        Platform.runLater(() -> setEmptyCellUserList());
         socketThread.sendMessage(Protocol.getAuthRequest(tfLogin.getText(), tfPassword.getText()));
     }
 
@@ -262,8 +269,9 @@ public class ClientGUI extends Application implements EventListener,
                 putLog(message);
                 socketThread.close();
             }
-            case Protocol.TYPE_BROADCAST ->
-                    putLog(String.format("%s %s: %s", DATE_FORMAT.format(Long.parseLong(arrayUserData[1])), arrayUserData[2], arrayUserData[3]));
+            case Protocol.TYPE_BROADCAST -> {
+                putLog(String.format("%s %s: %s", DATE_FORMAT.format(Long.parseLong(arrayUserData[1])), arrayUserData[2], arrayUserData[3]));
+            }
             case Protocol.USER_LIST -> {
                 String users = message.substring(Protocol.USER_LIST.length() + Protocol.DELIMITER.length());
                 String[] usersArray = users.split(Protocol.DELIMITER);
