@@ -4,36 +4,35 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
 
-public class SocketThread extends Thread {
+public class SocketThread {
     private final SocketThreadListener listener;
     private final Socket socket;
     private DataOutputStream out;
+    private ExecutorService executorService;
 
-    public SocketThread(SocketThreadListener listener, String name, Socket socket) {
-        super(name);
+    public SocketThread(SocketThreadListener listener, String name, Socket socket, ExecutorService executorService) {
         this.listener = listener;
         this.socket = socket;
-        start();
-    }
-
-    @Override
-    public void run() {
-        try {
-            listener.onSocketStart(this, socket);
-            DataInputStream in = new DataInputStream(socket.getInputStream());
-            out = new DataOutputStream(socket.getOutputStream());
-            listener.onSocketReady(this, socket);
-            while (!isInterrupted()) {
-                String msg = in.readUTF();
-                listener.onReceiveString(this, socket, msg);
+        this.executorService = executorService;
+        executorService.submit(() -> {
+            try {
+                listener.onSocketStart(SocketThread.this, socket);
+                DataInputStream in = new DataInputStream(socket.getInputStream());
+                out = new DataOutputStream(socket.getOutputStream());
+                listener.onSocketReady(SocketThread.this, socket);
+                while (!executorService.isShutdown()) {
+                    String msg = in.readUTF();
+                    listener.onReceiveString(this, socket, msg);
+                }
+            } catch (IOException ex) {
+                listener.onSocketException(SocketThread.this, ex);
+                close();
+            } finally {
+                listener.onSocketStop(SocketThread.this);
             }
-        } catch (IOException ex) {
-            listener.onSocketException(this, ex);
-            close();
-        } finally {
-            listener.onSocketStop(this);
-        }
+        });
     }
 
     public synchronized boolean sendMessage(String msg) {
@@ -49,7 +48,6 @@ public class SocketThread extends Thread {
     }
 
     public synchronized void close() {
-        interrupt();
         try {
             socket.close();
         } catch (IOException ex) {
