@@ -20,13 +20,16 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 
-import javax.swing.*;
-import java.awt.*;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static java.util.Arrays.*;
 
@@ -39,6 +42,9 @@ public class ClientGUI extends Application implements EventListener,
     private static Stage stage;
     private final DateFormat DATE_FORMAT = new SimpleDateFormat("[HH:mm] ");
     private SocketThread socketThread;
+    private boolean shownIoErrors = false;
+    private final int LAST_MESSAGE_COUNT = 10;
+    private ExecutorService executorService = Executors.newCachedThreadPool();
 
     @FXML
     TextArea log;
@@ -67,7 +73,7 @@ public class ClientGUI extends Application implements EventListener,
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        this.stage = primaryStage;
+        stage = primaryStage;
         Thread.setDefaultUncaughtExceptionHandler(this);
         ScrollPane scrollLog = new ScrollPane(log);
         ScrollPane scrollUsers = new ScrollPane(usersList);
@@ -79,6 +85,13 @@ public class ClientGUI extends Application implements EventListener,
         primaryStage.show();
         primaryStage.setAlwaysOnTop(true);
         primaryStage.setOnCloseRequest(e -> System.exit(1));
+    }
+
+    private void setEmptyCellUserList() {
+        usersList.setOnMouseClicked(event -> {
+            int indexElement = usersList.getSelectionModel().getSelectedIndex();
+            usersList.getSelectionModel().clearSelection(indexElement);
+        });
     }
 
     private void showException(Thread thread, Throwable exception) {
@@ -108,13 +121,72 @@ public class ClientGUI extends Application implements EventListener,
 
     private void putLog(String msg) {
         if ("".equals(msg)) return;
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                log.appendText(msg + "\n");
-                log.positionCaret(log.getLength());
-            }
+        Platform.runLater(() -> {
+            log.appendText(msg + "\n");
+            log.positionCaret(log.getLength());
         });
+    }
+
+    private void writingLogToFile(String message, String username) {
+        File file = new File("chat-server/src/main/java/com/geekbrains/chatserver/logs");
+        String fileName = file.getPath() + "/history_[" + username + "].log";
+        if (!file.isDirectory()) {
+            file.mkdir();
+        }
+        DateFormat DATE_FORMAT = new SimpleDateFormat("[yyyy-MM-dd] [HH:mm] ");
+        String date = DATE_FORMAT.format(new Date());
+        try (BufferedWriter writeLog = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(fileName, true), StandardCharsets.UTF_8))) {
+            writeLog.write(String.format("%s%s: %s\n", date, username, message));
+            writeLog.flush();
+        } catch (IOException e) {
+            if (!shownIoErrors) {
+                shownIoErrors = true;
+                showException(Thread.currentThread(), e);
+            }
+        }
+    }
+
+    private void readingFileToLog(String username) {
+        File file = new File("chat-server/src/main/java/com/geekbrains/chatserver/logs");
+        String fileName = file.getPath() + "/history_[" + username + "].log";
+        try {
+            StringBuilder stringBuilder = new StringBuilder();
+            String[] messages = Files.readAllLines(Paths.get(fileName)).toArray(new String[0]);
+
+            if (messages.length < LAST_MESSAGE_COUNT) {
+                for (String message : messages) {
+                    stringBuilder.append(message).append("\n");
+                }
+                Platform.runLater(() -> log.appendText(stringBuilder.toString()));
+                return;
+            }
+
+            invertArray(messages);
+            ArrayList<String> addMessage = new ArrayList<>(asList(messages).subList(0, LAST_MESSAGE_COUNT));
+
+            String[] message = addMessage.toArray(new String[0]);
+            invertArray(message);
+            for (int i = 0; i < LAST_MESSAGE_COUNT; i++) {
+                stringBuilder.append(message[i]).append("\n");
+            }
+
+            Platform.runLater(() -> log.appendText(stringBuilder.toString()));
+        } catch (IOException e) {
+            if (!shownIoErrors) {
+                shownIoErrors = true;
+                showException(Thread.currentThread(), e);
+            }
+        }
+    }
+
+    private <T> T[] invertArray(T[] array) {
+        for (int i = 0; i < array.length / 2; i++) {
+            T tmp = array[i];
+            array[i] = array[array.length - i - 1];
+            array[array.length - i - 1] = tmp;
+        }
+        return array;
     }
 
     /**
@@ -129,13 +201,14 @@ public class ClientGUI extends Application implements EventListener,
         tfMessage.setText(null);
         tfMessage.requestFocus();
         socketThread.sendMessage(Protocol.getUserBroadcast(message));
+        writingLogToFile(message, tfLogin.getText());
     }
 
     @FXML
     public void connect() {
         try {
             Socket socket = new Socket(tfIpAddress.getText(), Integer.parseInt(tfPort.getText()));
-            socketThread = new SocketThread(this, "Client", socket);
+            socketThread = new SocketThread(this, "Client", socket, executorService);
         } catch (IOException e) {
             showException(Thread.currentThread(), e);
         }
@@ -148,7 +221,7 @@ public class ClientGUI extends Application implements EventListener,
 
     @Override
     public void onSocketStart(SocketThread thread, Socket socket) {
-        putLog("Socket started");
+        putLog(String.format("%s %s", DATE_FORMAT.format(new Date()), "Socket started"));
     }
 
     @Override
@@ -156,7 +229,7 @@ public class ClientGUI extends Application implements EventListener,
         panelLogin.setVisible(true);
         panelBottom.setVisible(false);
         panelTopForChangeNick.setVisible(false);
-        putLog("Socket stopped");
+        putLog(String.format("%s %s", DATE_FORMAT.format(new Date()), "Socket stopped"));
         Platform.runLater(() -> {
             stage.setTitle(WINDOW_TITLE);
             ObservableList<String> clients = FXCollections.observableArrayList("");
@@ -171,7 +244,8 @@ public class ClientGUI extends Application implements EventListener,
 
     @Override
     public void onSocketReady(SocketThread thread, Socket socket) {
-        putLog("Socket is ready");
+        putLog(String.format("%s %s", DATE_FORMAT.format(new Date()), "Socket is ready"));
+        Platform.runLater(() -> setEmptyCellUserList());
         socketThread.sendMessage(Protocol.getAuthRequest(tfLogin.getText(), tfPassword.getText()));
     }
 
@@ -189,14 +263,16 @@ public class ClientGUI extends Application implements EventListener,
                 panelLogin.setVisible(false);
                 panelBottom.setVisible(true);
                 panelTopForChangeNick.setVisible(true);
+                //readingFileToLog(tfLogin.getText());
             }
             case Protocol.AUTH_DENIED -> putLog("Authorization failed");
             case Protocol.MSG_FORMAT_ERROR -> {
                 putLog(message);
                 socketThread.close();
             }
-            case Protocol.TYPE_BROADCAST ->
-                    putLog(String.format("%s %s: %s", DATE_FORMAT.format(Long.parseLong(arrayUserData[1])), arrayUserData[2], arrayUserData[3]));
+            case Protocol.TYPE_BROADCAST -> {
+                putLog(String.format("%s %s: %s", DATE_FORMAT.format(Long.parseLong(arrayUserData[1])), arrayUserData[2], arrayUserData[3]));
+            }
             case Protocol.USER_LIST -> {
                 String users = message.substring(Protocol.USER_LIST.length() + Protocol.DELIMITER.length());
                 String[] usersArray = users.split(Protocol.DELIMITER);
@@ -206,8 +282,7 @@ public class ClientGUI extends Application implements EventListener,
                     usersList.setItems(clients);
                 });
             }
-            case Protocol.LAST_MESSAGES ->
-                putLog(arrayUserData[1]);
+            case Protocol.LAST_MESSAGES -> putLog(arrayUserData[1]);
             default -> throw new RuntimeException("Unknown message type");
         }
     }
