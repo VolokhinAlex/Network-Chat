@@ -11,7 +11,6 @@ import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Vector;
-import java.util.concurrent.ExecutorService;
 
 public class ChatServer implements ServerSocketThreadListener, SocketThreadListener {
 
@@ -20,7 +19,6 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     private Vector<SocketThread> users;
 
     private ChatServerListener listener;
-    private ExecutorService executorService;
     private final int LAST_MESSAGE_COUNT = 100;
 
     public ChatServer(ChatServerListener listener) {
@@ -41,7 +39,6 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
             putLog("Server is not running");
         } else {
             server.interrupt();
-            executorService.shutdown();
         }
     }
 
@@ -76,11 +73,10 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     }
 
     @Override
-    public void onSocketAccepted(ServerSocketThread thread, ServerSocket server, Socket socket, ExecutorService executorService) {
+    public void onSocketAccepted(ServerSocketThread thread, ServerSocket server, Socket socket) {
         putLog("Client Connection");
         String name = "SocketThread" + socket.getInetAddress() + ":" + socket.getPort();
-        new ClientThread(this, name, socket, executorService);
-        this.executorService = executorService;
+        new ClientThread(this, name, socket);
     }
 
     @Override
@@ -131,7 +127,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
             case Protocol.USER_BROADCAST -> {
                 sendToAllAuthorizedClients(Protocol.getTypeBroadcast(user.getNickname(), msgArray[1]));
                 SqlClient.savingUserMessages(SqlClient.getId(user.getLogin(), user.getPassword(), user.getNickname()),
-                        SqlClient.getId(user.getLogin(), user.getPassword(), user.getNickname()), msgArray[1], System.currentTimeMillis() / 1000L);
+                        user.getNickname(), msgArray[1], System.currentTimeMillis() / 1000L);
             }
             case Protocol.CHANGE_NICKNAME -> changeNickname(user, msgArray);
             default -> user.msgFormatError(message);
@@ -201,7 +197,6 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         } else {
             SqlClient.changeNickname(user.getNickname(), msgArray[1]);
             sendToAllAuthorizedClients(Protocol.getTypeBroadcast("Server", user.getNickname() + " changed nickname to " + msgArray[1]));
-            SqlClient.savingUserMessages(0, 0, user.getNickname() + " changed nickname to " + msgArray[1], System.currentTimeMillis() / 1000L);
             user.setNickname(msgArray[1]);
             sendToAllAuthorizedClients(Protocol.getUserList(getUsers()));
             putLog(user.getNickname() + " changed nickname to " + msgArray[1]);
