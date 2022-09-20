@@ -23,6 +23,10 @@ public class ClientThread extends SocketThread {
         return nickname;
     }
 
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
     public String getLogin() {
         return login;
     }

@@ -22,8 +22,9 @@ import javafx.stage.Stage;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -39,6 +40,7 @@ public class ClientGUI extends Application implements EventListener,
     private static Stage stage;
     private final DateFormat DATE_FORMAT = new SimpleDateFormat("[HH:mm] ");
     private SocketThread socketThread;
+    private boolean shownIoErrors = false;
 
     @FXML
     TextArea log;
@@ -67,7 +69,7 @@ public class ClientGUI extends Application implements EventListener,
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        this.stage = primaryStage;
+        stage = primaryStage;
         Thread.setDefaultUncaughtExceptionHandler(this);
         ScrollPane scrollLog = new ScrollPane(log);
         ScrollPane scrollUsers = new ScrollPane(usersList);
@@ -108,13 +110,29 @@ public class ClientGUI extends Application implements EventListener,
 
     private void putLog(String msg) {
         if ("".equals(msg)) return;
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                log.appendText(msg + "\n");
-                log.positionCaret(log.getLength());
-            }
+        Platform.runLater(() -> {
+            log.appendText(msg + "\n");
+            log.positionCaret(log.getLength());
         });
+    }
+
+    private void writingLogToFile(String message, String username) {
+        File file = new File("chat-server/src/main/java/com/geekbrains/chatserver/logs");
+        String fileName = file.getPath() + "/history_[" + username + "].log";
+        if (!file.exists()) {
+            file.mkdir();
+        }
+        String date = DATE_FORMAT.format(new Date());
+        try (BufferedWriter writeLog = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(fileName, true), StandardCharsets.UTF_8))) {
+            writeLog.write(String.format("%s %s: %s\n", date, username, message));
+            writeLog.flush();
+        } catch (IOException e) {
+            if (!shownIoErrors) {
+                shownIoErrors = true;
+                showException(Thread.currentThread(), e);
+            }
+        }
     }
 
     /**
@@ -129,6 +147,7 @@ public class ClientGUI extends Application implements EventListener,
         tfMessage.setText(null);
         tfMessage.requestFocus();
         socketThread.sendMessage(Protocol.getUserBroadcast(message));
+        writingLogToFile(message, tfLogin.getText());
     }
 
     @FXML
@@ -206,8 +225,7 @@ public class ClientGUI extends Application implements EventListener,
                     usersList.setItems(clients);
                 });
             }
-            case Protocol.LAST_MESSAGES ->
-                putLog(arrayUserData[1]);
+            case Protocol.LAST_MESSAGES -> putLog(arrayUserData[1]);
             default -> throw new RuntimeException("Unknown message type");
         }
     }

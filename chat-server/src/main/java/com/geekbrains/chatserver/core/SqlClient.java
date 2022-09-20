@@ -22,7 +22,7 @@ public class SqlClient {
     }
 
     public static String getNickname(String login, String password) {
-        String query = String.format("select nickname from clients where login='%s' and password='%s'",
+        String query = String.format("SELECT nickname FROM clients WHERE login='%s' AND password='%s'",
                 login, password);
         try (ResultSet set = statement.executeQuery(query)) {
             if (set.next()) {
@@ -47,7 +47,7 @@ public class SqlClient {
 
     public static Integer getId(String login, String password, String nickname) {
         try {
-            preparedStatement = connection.prepareStatement("select id from clients where login=? and password=? and nickname=?");
+            preparedStatement = connection.prepareStatement("SELECT id FROM clients WHERE login=? AND password=? AND nickname=?");
             preparedStatement.setString(1, login);
             preparedStatement.setString(2, password);
             preparedStatement.setString(3, nickname);
@@ -65,7 +65,7 @@ public class SqlClient {
     public static boolean changeNickname(String oldNickname, String newNickname) {
         try {
             if (isAlreadyThereNickname(newNickname)) return false;
-            preparedStatement = connection.prepareStatement("update clients SET nickname=? where nickname=?");
+            preparedStatement = connection.prepareStatement("UPDATE clients SET nickname=? WHERE nickname=?");
             preparedStatement.setString(1, newNickname);
             preparedStatement.setString(2, oldNickname);
             preparedStatement.executeUpdate();
@@ -86,7 +86,7 @@ public class SqlClient {
     }
 
     public static boolean isAlreadyThereNickname(String nickname) {
-        String query = String.format("select nickname from clients where nickname=\"%s\"", nickname);
+        String query = String.format("SELECT nickname FROM clients WHERE nickname=\"%s\"", nickname);
         try (ResultSet set = statement.executeQuery(query)) {
             return set.next();
         } catch (SQLException e) {

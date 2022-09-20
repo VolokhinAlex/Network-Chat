@@ -19,7 +19,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     private Vector<SocketThread> users;
 
     private ChatServerListener listener;
-    private final int LAST_MESSAGE_COUNT = 10;
+    private final int LAST_MESSAGE_COUNT = 100;
 
     public ChatServer(ChatServerListener listener) {
         this.listener = listener;
@@ -197,6 +197,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         } else {
             SqlClient.changeNickname(user.getNickname(), msgArray[1]);
             sendToAllAuthorizedClients(Protocol.getTypeBroadcast("Server", user.getNickname() + " changed nickname to " + msgArray[1]));
+            user.setNickname(msgArray[1]);
             sendToAllAuthorizedClients(Protocol.getUserList(getUsers()));
             putLog(user.getNickname() + " changed nickname to " + msgArray[1]);
         }
@@ -218,4 +219,5 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         }
         return array;
     }
+
 }
