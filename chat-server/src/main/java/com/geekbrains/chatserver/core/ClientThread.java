@@ -70,4 +70,8 @@ public class ClientThread extends SocketThread {
         close();
     }
 
+    void sendPrivateMessage(String nickname, String msg) {
+        sendMessage(Protocol.getTypeBroadcast(nickname, msg));
+    }
+
 }

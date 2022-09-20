@@ -56,6 +56,7 @@ public class SqlClient {
             if (rs.next()) {
                 return rs.getInt("id");
             }
+            System.out.println("get id");
             preparedStatement.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -138,7 +139,6 @@ public class SqlClient {
                 stringBuffer.append(String.format("%s%s: %s", formattedTime,
                         getNickname(set.getInt("user_to_id")), set.getString("message"))).append(DELIMITER);
             }
-
             preparedStatement.close();
             set.close();
             return stringBuffer.toString();

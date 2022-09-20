@@ -19,6 +19,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
+import org.w3c.dom.ls.LSOutput;
 
 import java.io.*;
 import java.net.Socket;
@@ -44,7 +45,7 @@ public class ClientGUI extends Application implements EventListener,
     private SocketThread socketThread;
     private boolean shownIoErrors = false;
     private final int LAST_MESSAGE_COUNT = 10;
-    private ExecutorService executorService = Executors.newCachedThreadPool();
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     @FXML
     TextArea log;
@@ -66,6 +67,9 @@ public class ClientGUI extends Application implements EventListener,
 
     @FXML
     Button btnLogin, btnDisconnect, btnSend, btnChange;
+
+    @FXML
+    ComboBox dropDownUsersList;
 
     public static void main(String[] args) {
         launch(args);
@@ -189,10 +193,6 @@ public class ClientGUI extends Application implements EventListener,
         return array;
     }
 
-    /**
-     * Method for printing messages to the log.
-     */
-
     @FXML
     private void sendMessage() {
         String message = tfMessage.getText();
@@ -202,6 +202,23 @@ public class ClientGUI extends Application implements EventListener,
         tfMessage.requestFocus();
         socketThread.sendMessage(Protocol.getUserBroadcast(message));
         writingLogToFile(message, tfLogin.getText());
+    }
+
+    private void sendPrivateMessage(String userTo, String message) {
+        if (message == null) return;
+        if (message.equals("") || message.trim().length() == 0) return;
+        tfMessage.setText(null);
+        tfMessage.requestFocus();
+        socketThread.sendMessage(Protocol.getPrivateUserBroadcast(userTo, message));
+    }
+
+    @FXML
+    private void onActionDropUserList() {
+        dropDownUsersList.setOnAction((e) -> {
+            String item = String.valueOf(dropDownUsersList.getValue());
+            if (item.equals("Everybody")) return;
+            sendPrivateMessage(String.valueOf(dropDownUsersList.getValue()), tfMessage.getText());
+        });
     }
 
     @FXML
@@ -263,7 +280,6 @@ public class ClientGUI extends Application implements EventListener,
                 panelLogin.setVisible(false);
                 panelBottom.setVisible(true);
                 panelTopForChangeNick.setVisible(true);
-                //readingFileToLog(tfLogin.getText());
             }
             case Protocol.AUTH_DENIED -> putLog("Authorization failed");
             case Protocol.MSG_FORMAT_ERROR -> {
@@ -280,6 +296,8 @@ public class ClientGUI extends Application implements EventListener,
                 Platform.runLater(() -> {
                     ObservableList<String> clients = FXCollections.observableArrayList(usersArray);
                     usersList.setItems(clients);
+                    dropDownUsersList.setItems(clients);
+                    dropDownUsersList.setValue("Everybody");
                 });
             }
             case Protocol.LAST_MESSAGES -> putLog(arrayUserData[1]);

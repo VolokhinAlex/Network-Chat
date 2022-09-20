@@ -10,6 +10,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 
@@ -134,6 +135,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
                         SqlClient.getId(user.getLogin(), user.getPassword(), user.getNickname()), msgArray[1], System.currentTimeMillis() / 1000L);
             }
             case Protocol.CHANGE_NICKNAME -> changeNickname(user, msgArray);
+            case Protocol.PRIVATE_USER_BROADCAST -> sendPrivateMessageToAuthorizedClient(user, msgArray[1], msgArray[2]);
             default -> user.msgFormatError(message);
         }
     }
@@ -172,6 +174,19 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
             if (!recipient.isAuthorized()) continue;
             recipient.sendMessage(msg);
         }
+    }
+
+    private void sendPrivateMessageToAuthorizedClient(ClientThread userFrom, String userTo, String msg) {
+        if (userFrom.getNickname().equals(userTo)) return;
+        for (SocketThread user : users) {
+            ClientThread client = (ClientThread) user;
+            if (client.getNickname().equals(userTo)) {
+                client.sendPrivateMessage("От " + userFrom.getNickname(), msg);
+                userFrom.sendPrivateMessage("Клиенту " + userTo, msg);
+                return;
+            }
+        }
+        userFrom.sendPrivateMessage("Server", "Клиент " + userTo + " не найден");
     }
 
     public String getUsers() {

@@ -8,6 +8,7 @@
 
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.control.ComboBox?>
 <VBox fx:controller="com.geekbrains.chatclient.ClientGUI" xmlns:fx="http://javafx.com/fxml" alignment="center">
 
     <GridPane fx:id="panelTop">
@@ -37,6 +38,7 @@
         <Button text="Disconnect" onAction="#disconnect" fx:id="btnDisconnect"/>
         <TextField fx:id="tfMessage" promptText="Введите сообщение..." HBox.hgrow="ALWAYS" onAction="#sendMessage"/>
         <Button text="Send" onAction="#sendMessage" fx:id="btnSend"/>
+        <ComboBox fx:id="dropDownUsersList" onAction="#onActionDropUserList"/>
     </HBox>
 
 </VBox>
