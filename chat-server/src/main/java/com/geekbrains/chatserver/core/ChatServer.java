@@ -41,7 +41,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
             putLog("Server is not running");
         } else {
             server.interrupt();
-            executorService.shutdown(); // Нужен ли тут shut down ?
+            executorService.shutdown();
         }
     }
 
