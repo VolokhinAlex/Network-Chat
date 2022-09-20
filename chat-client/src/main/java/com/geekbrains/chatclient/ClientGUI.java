@@ -119,7 +119,7 @@ public class ClientGUI extends Application implements EventListener,
     private void writingLogToFile(String message, String username) {
         File file = new File("chat-server/src/main/java/com/geekbrains/chatserver/logs");
         String fileName = file.getPath() + "/history_[" + username + "].log";
-        if (!file.exists()) {
+        if (!file.isDirectory()) {
             file.mkdir();
         }
         String date = DATE_FORMAT.format(new Date());
