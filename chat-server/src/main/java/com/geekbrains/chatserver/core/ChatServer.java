@@ -10,7 +10,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 
@@ -181,12 +180,12 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         for (SocketThread user : users) {
             ClientThread client = (ClientThread) user;
             if (client.getNickname().equals(userTo)) {
-                client.sendPrivateMessage("От " + userFrom.getNickname(), msg);
-                userFrom.sendPrivateMessage("Клиенту " + userTo, msg);
+                client.sendPrivateMessage("From " + userFrom.getNickname(), msg);
+                userFrom.sendPrivateMessage("To " + userTo, msg);
                 return;
             }
         }
-        userFrom.sendPrivateMessage("Server", "Клиент " + userTo + " не найден");
+        userFrom.sendPrivateMessage("Server", "Client " + userTo + " did not find");
     }
 
     public String getUsers() {

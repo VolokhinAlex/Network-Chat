@@ -38,7 +38,8 @@
         <Button text="Disconnect" onAction="#disconnect" fx:id="btnDisconnect"/>
         <TextField fx:id="tfMessage" promptText="Введите сообщение..." HBox.hgrow="ALWAYS" onAction="#sendMessage"/>
         <Button text="Send" onAction="#sendMessage" fx:id="btnSend"/>
-        <ComboBox fx:id="dropDownUsersList" onAction="#onActionDropUserList"/>
+        <ComboBox fx:id="dropDownUsersList"/>
+        <Button text="Send Private Message" onAction="#sendPrivateMessage" fx:id="btnSendPrivateMessage"/>
     </HBox>
 
 </VBox>

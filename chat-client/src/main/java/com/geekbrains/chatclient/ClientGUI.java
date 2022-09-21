@@ -19,7 +19,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
-import org.w3c.dom.ls.LSOutput;
 
 import java.io.*;
 import java.net.Socket;
@@ -66,10 +65,10 @@ public class ClientGUI extends Application implements EventListener,
     ListView<String> usersList;
 
     @FXML
-    Button btnLogin, btnDisconnect, btnSend, btnChange;
+    Button btnLogin, btnDisconnect, btnSend, btnChange, btnSendPrivateMessage;
 
     @FXML
-    ComboBox dropDownUsersList;
+    ComboBox<String> dropDownUsersList;
 
     public static void main(String[] args) {
         launch(args);
@@ -79,7 +78,6 @@ public class ClientGUI extends Application implements EventListener,
     public void start(Stage primaryStage) throws Exception {
         stage = primaryStage;
         Thread.setDefaultUncaughtExceptionHandler(this);
-        ScrollPane scrollLog = new ScrollPane(log);
         ScrollPane scrollUsers = new ScrollPane(usersList);
         scrollUsers.setPrefSize(100, 0);
         primaryStage.setResizable(false);
@@ -204,21 +202,16 @@ public class ClientGUI extends Application implements EventListener,
         writingLogToFile(message, tfLogin.getText());
     }
 
-    private void sendPrivateMessage(String userTo, String message) {
+    @FXML
+    private void sendPrivateMessage() {
+        String message = tfMessage.getText();
         if (message == null) return;
         if (message.equals("") || message.trim().length() == 0) return;
         tfMessage.setText(null);
         tfMessage.requestFocus();
-        socketThread.sendMessage(Protocol.getPrivateUserBroadcast(userTo, message));
-    }
-
-    @FXML
-    private void onActionDropUserList() {
-        dropDownUsersList.setOnAction((e) -> {
-            String item = String.valueOf(dropDownUsersList.getValue());
-            if (item.equals("Everybody")) return;
-            sendPrivateMessage(String.valueOf(dropDownUsersList.getValue()), tfMessage.getText());
-        });
+        String item = String.valueOf(dropDownUsersList.getValue());
+        if (item.equals("Everybody")) return;
+        socketThread.sendMessage(Protocol.getPrivateUserBroadcast(item, message));
     }
 
     @FXML
@@ -286,9 +279,8 @@ public class ClientGUI extends Application implements EventListener,
                 putLog(message);
                 socketThread.close();
             }
-            case Protocol.TYPE_BROADCAST -> {
-                putLog(String.format("%s %s: %s", DATE_FORMAT.format(Long.parseLong(arrayUserData[1])), arrayUserData[2], arrayUserData[3]));
-            }
+            case Protocol.TYPE_BROADCAST ->
+                    putLog(String.format("%s %s: %s", DATE_FORMAT.format(Long.parseLong(arrayUserData[1])), arrayUserData[2], arrayUserData[3]));
             case Protocol.USER_LIST -> {
                 String users = message.substring(Protocol.USER_LIST.length() + Protocol.DELIMITER.length());
                 String[] usersArray = users.split(Protocol.DELIMITER);
@@ -297,7 +289,7 @@ public class ClientGUI extends Application implements EventListener,
                     ObservableList<String> clients = FXCollections.observableArrayList(usersArray);
                     usersList.setItems(clients);
                     dropDownUsersList.setItems(clients);
-                    dropDownUsersList.setValue("Everybody");
+                    dropDownUsersList.getSelectionModel().selectFirst();
                 });
             }
             case Protocol.LAST_MESSAGES -> putLog(arrayUserData[1]);

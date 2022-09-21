@@ -56,7 +56,21 @@ public class SqlClient {
             if (rs.next()) {
                 return rs.getInt("id");
             }
-            System.out.println("get id");
+            preparedStatement.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public static Integer getIdByNickname(String nickname) {
+        try {
+            preparedStatement = connection.prepareStatement("SELECT id FROM user WHERE nickname=?");
+            preparedStatement.setString(1, nickname);
+            ResultSet rs = preparedStatement.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
             preparedStatement.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
