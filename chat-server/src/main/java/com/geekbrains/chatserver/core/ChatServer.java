@@ -176,7 +176,10 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     }
 
     private void sendPrivateMessageToAuthorizedClient(ClientThread userFrom, String userTo, String msg) {
-        if (userFrom.getNickname().equals(userTo)) return;
+        if (userFrom.getNickname().equals(userTo)) {
+            userFrom.sendPrivateMessage(userFrom.getNickname() + "'s Favorites", msg);
+            return;
+        }
         for (SocketThread user : users) {
             ClientThread client = (ClientThread) user;
             if (client.getNickname().equals(userTo)) {

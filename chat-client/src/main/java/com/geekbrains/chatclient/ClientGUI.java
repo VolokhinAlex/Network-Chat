@@ -290,6 +290,7 @@ public class ClientGUI extends Application implements EventListener,
                     usersList.setItems(clients);
                     dropDownUsersList.setItems(clients);
                     dropDownUsersList.getSelectionModel().selectFirst();
+                    stage.setTitle(WINDOW_TITLE + " nickname: " + arrayUserData[1]);
                 });
             }
             case Protocol.LAST_MESSAGES -> putLog(arrayUserData[1]);
