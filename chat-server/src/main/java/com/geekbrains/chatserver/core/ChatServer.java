@@ -6,12 +6,15 @@ import com.geekbrains.network.ServerSocketThreadListener;
 import com.geekbrains.network.SocketThread;
 import com.geekbrains.network.SocketThreadListener;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.*;
 
 public class ChatServer implements ServerSocketThreadListener, SocketThreadListener {
 
@@ -22,6 +25,8 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     private ChatServerListener listener;
     private ExecutorService executorService;
     private final int LAST_MESSAGE_COUNT = 100;
+    private final Logger logger = Logger.getLogger(ChatServer.class.getName());
+    private Handler handler;
 
     public ChatServer(ChatServerListener listener) {
         this.listener = listener;
@@ -54,6 +59,19 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     public void onServerStarted(ServerSocketThread thread) {
         putLog("Server socket thread started");
         SqlClient.connect();
+        try {
+            File file = new File("chat-server/src/main/java/com/geekbrains/chatserver/logs/server_logs");
+            if (!file.isDirectory()) {
+                file.mkdirs();
+            }
+            handler = new FileHandler(file.getPath() + "/server_logs_%g.log", 1024 * 10, 20, true);
+            handler.setFormatter(new SimpleFormatter());
+            logger.addHandler(handler);
+            logger.setUseParentHandlers(false);
+            logger.log(Level.INFO, "Server socket thread started");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -63,6 +81,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         for (SocketThread user : users) {
             user.close();
         }
+        logger.log(Level.INFO, "Server socket thread stopped");
     }
 
     @Override
@@ -77,6 +96,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     @Override
     public void onSocketAccepted(ServerSocketThread thread, ServerSocket server, Socket socket, ExecutorService executorService) {
         putLog("Client Connection");
+        logger.log(Level.INFO, "Client Connection");
         String name = "SocketThread" + socket.getInetAddress() + ":" + socket.getPort();
         new ClientThread(this, name, socket, executorService);
         this.executorService = executorService;
@@ -121,6 +141,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     @Override
     public synchronized void onSocketException(SocketThread thread, Exception exception) {
         exception.printStackTrace();
+        logger.log(Level.WARNING, exception.getMessage());
     }
 
     public void handleAuthClientMessage(ClientThread user, String message) {
@@ -131,9 +152,11 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
                 sendToAllAuthorizedClients(Protocol.getTypeBroadcast(user.getNickname(), msgArray[1]));
                 SqlClient.savingUserMessages(SqlClient.getId(user.getLogin(), user.getPassword(), user.getNickname()),
                         SqlClient.getId(user.getLogin(), user.getPassword(), user.getNickname()), msgArray[1], System.currentTimeMillis() / 1000L);
+                logger.log(Level.INFO, "Client send message");
             }
             case Protocol.CHANGE_NICKNAME -> changeNickname(user, msgArray);
-            case Protocol.PRIVATE_USER_BROADCAST -> sendPrivateMessageToAuthorizedClient(user, msgArray[1], msgArray[2]);
+            case Protocol.PRIVATE_USER_BROADCAST ->
+                    sendPrivateMessageToAuthorizedClient(user, msgArray[1], msgArray[2]);
             default -> user.msgFormatError(message);
         }
     }
@@ -149,6 +172,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         String nickname = SqlClient.getNickname(login, password);
         if (nickname == null) {
             putLog("Invalid credentials attempt for login = " + login);
+            logger.log(Level.INFO, "Invalid credentials attempt for login = " + login);
             user.authFail();
             return;
         } else {
@@ -212,8 +236,10 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
 
     private void changeNickname(ClientThread user, String[] msgArray) {
         if (!(SqlClient.changeNickname(user.getNickname(), msgArray[1]))) {
+            String message = String.format("%s failed to changed nickname to %s!", user.getNickname(), msgArray[1]);
             user.msgFormatError(String.format("You failed to change your nickname to %s!", msgArray[1]));
-            putLog(String.format("%s failed to changed nickname to %s!", user.getNickname(), msgArray[1]));
+            putLog(message);
+            logger.log(Level.INFO, message);
         } else {
             SqlClient.changeNickname(user.getNickname(), msgArray[1]);
             sendToAllAuthorizedClients(Protocol.getTypeBroadcast("Server", user.getNickname() + " changed nickname to " + msgArray[1]));
@@ -221,6 +247,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
             user.setNickname(msgArray[1]);
             sendToAllAuthorizedClients(Protocol.getUserList(getUsers()));
             putLog(user.getNickname() + " changed nickname to " + msgArray[1]);
+            logger.log(Level.INFO, user.getNickname() + " changed nickname to " + msgArray[1]);
         }
     }
 
