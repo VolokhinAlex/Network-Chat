@@ -12,6 +12,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.*;
@@ -55,23 +56,29 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         listener.onChatServerMessage(msg);
     }
 
-    @Override
-    public void onServerStarted(ServerSocketThread thread) {
-        putLog("Server socket thread started");
-        SqlClient.connect();
+    private void createLoggingEvents() {
         try {
             File file = new File("chat-server/src/main/java/com/geekbrains/chatserver/logs/server_logs");
             if (!file.isDirectory()) {
                 file.mkdirs();
             }
-            handler = new FileHandler(file.getPath() + "/server_logs_%g.log", 1024 * 10, 20, true);
+            DateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
+            String date = DATE_FORMAT.format(new Date());
+            handler = new FileHandler(String.format("%s/%s_logs.log", file.getPath(), date), true);
             handler.setFormatter(new SimpleFormatter());
             logger.addHandler(handler);
             logger.setUseParentHandlers(false);
-            logger.log(Level.INFO, "Server socket thread started");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void onServerStarted(ServerSocketThread thread) {
+        putLog("Server socket thread started");
+        SqlClient.connect();
+        createLoggingEvents();
+        logger.log(Level.INFO, "Server socket thread started");
     }
 
     @Override
@@ -105,6 +112,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     @Override
     public void onServerException(ServerSocketThread thread, Throwable exception) {
         exception.printStackTrace();
+        logger.log(Level.SEVERE, exception.getMessage());
     }
 
     @Override
