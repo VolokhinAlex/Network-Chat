@@ -16,7 +16,7 @@ public class SocketThread {
         this.listener = listener;
         this.socket = socket;
         this.executorService = executorService;
-        executorService.submit(() -> {
+        executorService.execute(() -> {
             try {
                 listener.onSocketStart(SocketThread.this, socket);
                 DataInputStream in = new DataInputStream(socket.getInputStream());
