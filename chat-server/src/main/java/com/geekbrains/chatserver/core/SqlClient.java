@@ -149,8 +149,7 @@ public class SqlClient {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("[yyyy-MM-dd] [HH:mm]  ");
             while (set.next()) {
                 Date date = new Date(set.getLong("date_time") * 1000L);
-                StringBuilder formattedTime = new StringBuilder(simpleDateFormat.format(date));
-                stringBuffer.append(String.format("%s%s: %s", formattedTime,
+                stringBuffer.append(String.format("%s%s: %s", simpleDateFormat.format(date),
                         getNickname(set.getInt("user_to_id")), set.getString("message"))).append(DELIMITER);
             }
             preparedStatement.close();

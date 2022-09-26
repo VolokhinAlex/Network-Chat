@@ -40,7 +40,6 @@ public class ServerGUI extends Application implements EventListener,
     @Override
     public void start(Stage primaryStage) throws Exception {
         Thread.setDefaultUncaughtExceptionHandler(this);
-        ScrollPane scrollLog = new ScrollPane(log);
         primaryStage.setAlwaysOnTop(true);
         Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("/com/geekbrains/chatserver/main.fxml")));
         primaryStage.setTitle("Chat Server");
@@ -61,19 +60,15 @@ public class ServerGUI extends Application implements EventListener,
     private void showException(Thread thread, Throwable exception) {
         String message;
         StackTraceElement[] ste = exception.getStackTrace();
-        if (ste.length == 0) {
-            message = "Empty StackTrace";
-        } else {
-            message = String.format("Exception in thread \"%s\" %s: %s\n\tat %s",
-                    thread.getName(), exception.getClass().getCanonicalName(),
-                    exception.getMessage(), ste[0]);
-            Platform.runLater(() -> {
-                Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
-                alert.showAndWait();
-                Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
-                stage.setAlwaysOnTop(true);
-            });
-        }
+        message = String.format("Exception in thread \"%s\" %s: %s\n\tat %s",
+                thread.getName(), exception.getClass().getCanonicalName(),
+                exception.getMessage(), ste[0]);
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+            alert.showAndWait();
+            Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
+            stage.setAlwaysOnTop(true);
+        });
     }
 
     @Override

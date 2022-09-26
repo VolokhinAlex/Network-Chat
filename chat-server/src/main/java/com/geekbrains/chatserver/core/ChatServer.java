@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.*;
@@ -27,7 +28,6 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     private ExecutorService executorService;
     private final int LAST_MESSAGE_COUNT = 100;
     private final Logger logger = Logger.getLogger(ChatServer.class.getName());
-    private Handler handler;
 
     public ChatServer(ChatServerListener listener) {
         this.listener = listener;
@@ -64,7 +64,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
             }
             DateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
             String date = DATE_FORMAT.format(new Date());
-            handler = new FileHandler(String.format("%s/%s_logs.log", file.getPath(), date), true);
+            Handler handler = new FileHandler(String.format("%s/%s_logs.log", file.getPath(), date), true);
             handler.setFormatter(new SimpleFormatter());
             logger.addHandler(handler);
             logger.setUseParentHandlers(false);
@@ -180,7 +180,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
         String nickname = SqlClient.getNickname(login, password);
         if (nickname == null) {
             putLog("Invalid credentials attempt for login = " + login);
-            logger.log(Level.INFO, "Invalid credentials attempt for login = " + login);
+            logger.log(Level.WARNING, "Invalid credentials attempt for login = " + login);
             user.authFail();
             return;
         } else {
@@ -247,7 +247,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
             String message = String.format("%s failed to changed nickname to %s!", user.getNickname(), msgArray[1]);
             user.msgFormatError(String.format("You failed to change your nickname to %s!", msgArray[1]));
             putLog(message);
-            logger.log(Level.INFO, message);
+            logger.log(Level.WARNING, message);
         } else {
             SqlClient.changeNickname(user.getNickname(), msgArray[1]);
             sendToAllAuthorizedClients(Protocol.getTypeBroadcast("Server", user.getNickname() + " changed nickname to " + msgArray[1]));
@@ -260,7 +260,7 @@ public class ChatServer implements ServerSocketThreadListener, SocketThreadListe
     }
 
     private void printLastMessage(SocketThread thread, int lastMessageCount) {
-        String[] lastMessages = SqlClient.showLastMessages(lastMessageCount).split(SqlClient.DELIMITER);
+        String[] lastMessages = Objects.requireNonNull(SqlClient.showLastMessages(lastMessageCount)).split(SqlClient.DELIMITER);
         invertArray(lastMessages);
         for (String lastMessage : lastMessages) {
             thread.sendMessage(Protocol.getLastMessages(lastMessage));

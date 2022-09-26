@@ -23,8 +23,6 @@ import javafx.stage.Stage;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -149,48 +147,6 @@ public class ClientGUI extends Application implements EventListener,
         }
     }
 
-    private void readingFileToLog(String username) {
-        File file = new File("chat-server/src/main/java/com/geekbrains/chatserver/logs");
-        String fileName = file.getPath() + "/history_[" + username + "].log";
-        try {
-            StringBuilder stringBuilder = new StringBuilder();
-            String[] messages = Files.readAllLines(Paths.get(fileName)).toArray(new String[0]);
-
-            if (messages.length < LAST_MESSAGE_COUNT) {
-                for (String message : messages) {
-                    stringBuilder.append(message).append("\n");
-                }
-                Platform.runLater(() -> log.appendText(stringBuilder.toString()));
-                return;
-            }
-
-            invertArray(messages);
-            ArrayList<String> addMessage = new ArrayList<>(asList(messages).subList(0, LAST_MESSAGE_COUNT));
-
-            String[] message = addMessage.toArray(new String[0]);
-            invertArray(message);
-            for (int i = 0; i < LAST_MESSAGE_COUNT; i++) {
-                stringBuilder.append(message[i]).append("\n");
-            }
-
-            Platform.runLater(() -> log.appendText(stringBuilder.toString()));
-        } catch (IOException e) {
-            if (!shownIoErrors) {
-                shownIoErrors = true;
-                showException(Thread.currentThread(), e);
-            }
-        }
-    }
-
-    private <T> T[] invertArray(T[] array) {
-        for (int i = 0; i < array.length / 2; i++) {
-            T tmp = array[i];
-            array[i] = array[array.length - i - 1];
-            array[array.length - i - 1] = tmp;
-        }
-        return array;
-    }
-
     @FXML
     private void sendMessage() {
         String message = tfMessage.getText();
@@ -290,7 +246,6 @@ public class ClientGUI extends Application implements EventListener,
                     usersList.setItems(clients);
                     dropDownUsersList.setItems(clients);
                     dropDownUsersList.getSelectionModel().selectFirst();
-                    stage.setTitle(WINDOW_TITLE + " nickname: " + arrayUserData[1]);
                 });
             }
             case Protocol.LAST_MESSAGES -> putLog(arrayUserData[1]);
