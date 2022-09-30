@@ -21,8 +21,8 @@
             <Button HBox.hgrow="ALWAYS" text="Login" onAction="#connect" fx:id="btnLogin"/>
         </HBox>
 
-        <HBox fx:id="panelTopForChangeNick" visible="false" >
-            <TextField fx:id="tfChangeNickname" promptText="Введите новый nickname" HBox.hgrow="ALWAYS"
+        <HBox fx:id="panelTopForChangeNick" visible="false">
+            <TextField fx:id="tfChangeNickname" promptText="Enter a new nickname" HBox.hgrow="ALWAYS"
                        onAction="#changeNickname"/>
             <Button text="Change Nickname" onAction="#changeNickname" fx:id="btnChange"/>
         </HBox>
@@ -36,7 +36,7 @@
 
     <HBox fx:id="panelBottom" visible="false">
         <Button text="Disconnect" onAction="#disconnect" fx:id="btnDisconnect"/>
-        <TextField fx:id="tfMessage" promptText="Введите сообщение..." HBox.hgrow="ALWAYS" onAction="#sendMessage"/>
+        <TextField fx:id="tfMessage" promptText="Enter your message..." HBox.hgrow="ALWAYS" onAction="#sendMessage"/>
         <Button text="Send" onAction="#sendMessage" fx:id="btnSend"/>
         <ComboBox fx:id="dropDownUsersList"/>
         <Button text="Send Private Message" onAction="#sendPrivateMessage" fx:id="btnSendPrivateMessage"/>

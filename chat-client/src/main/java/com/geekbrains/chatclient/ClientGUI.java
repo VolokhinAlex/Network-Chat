@@ -41,7 +41,6 @@ public class ClientGUI extends Application implements EventListener,
     private final DateFormat DATE_FORMAT = new SimpleDateFormat("[HH:mm] ");
     private SocketThread socketThread;
     private boolean shownIoErrors = false;
-    private final int LAST_MESSAGE_COUNT = 10;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     @FXML
@@ -97,19 +96,15 @@ public class ClientGUI extends Application implements EventListener,
     private void showException(Thread thread, Throwable exception) {
         String message;
         StackTraceElement[] ste = exception.getStackTrace();
-        if (ste.length == 0) {
-            message = "Empty StackTrace";
-        } else {
-            message = String.format("Exception in thread \"%s\" %s: %s\n\tat %s",
-                    thread.getName(), exception.getClass().getCanonicalName(),
-                    exception.getMessage(), ste[0]);
-            Platform.runLater(() -> {
-                Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
-                alert.showAndWait();
-                Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
-                stage.setAlwaysOnTop(true);
-            });
-        }
+        message = String.format("Exception in thread \"%s\" %s: %s\n\tat %s",
+                thread.getName(), exception.getClass().getCanonicalName(),
+                exception.getMessage(), ste[0]);
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+            alert.showAndWait();
+            Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
+            stage.setAlwaysOnTop(true);
+        });
     }
 
     @Override

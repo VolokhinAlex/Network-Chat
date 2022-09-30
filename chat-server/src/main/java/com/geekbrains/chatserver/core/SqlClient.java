@@ -35,17 +35,6 @@ public class SqlClient {
         return null;
     }
 
-    public static String registration(String login, String password, String nickname) {
-        String query = String.format("INSERT INTO user (login, password, nickname) VALUES(\"%s\", \"%s\", \"%s\")", login, password, nickname);
-        try {
-            statement.executeUpdate(query);
-            statement.close();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return null;
-    }
-
     public static Integer getId(String login, String password, String nickname) {
         try {
             preparedStatement = connection.prepareStatement("SELECT id FROM user WHERE login=? AND password=? AND nickname=?");
@@ -145,16 +134,16 @@ public class SqlClient {
             preparedStatement = connection.prepareStatement("SELECT * FROM message ORDER BY id DESC LIMIT ?;");
             preparedStatement.setInt(1, count);
             ResultSet set = preparedStatement.executeQuery();
-            StringBuffer stringBuffer = new StringBuffer();
+            StringBuilder lastMessage = new StringBuilder();
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("[yyyy-MM-dd] [HH:mm]  ");
             while (set.next()) {
                 Date date = new Date(set.getLong("date_time") * 1000L);
-                stringBuffer.append(String.format("%s%s: %s", simpleDateFormat.format(date),
+                lastMessage.append(String.format("%s%s: %s", simpleDateFormat.format(date),
                         getNickname(set.getInt("user_to_id")), set.getString("message"))).append(DELIMITER);
             }
             preparedStatement.close();
             set.close();
-            return stringBuffer.toString();
+            return lastMessage.toString();
         } catch (SQLException e) {
             e.printStackTrace();
         }
