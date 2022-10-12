@@ -168,7 +168,7 @@ public class ClientGUI extends Application implements EventListener,
     @FXML
     public void connect() {
         try {
-            Socket socket = new Socket(tfIpAddress.getText(), Integer.parseInt(tfPort.getText()));
+            Socket socket = new Socket(tfIpAddress.getText().trim(), Integer.parseInt(tfPort.getText().trim()));
             socketThread = new SocketThread(this, "Client", socket, executorService);
         } catch (IOException e) {
             showException(Thread.currentThread(), e);
@@ -200,14 +200,14 @@ public class ClientGUI extends Application implements EventListener,
 
     @FXML
     public void changeNickname() {
-        socketThread.sendMessage(Protocol.getChangeNickname(tfChangeNickname.getText()));
+        socketThread.sendMessage(Protocol.getChangeNickname(tfChangeNickname.getText().trim()));
     }
 
     @Override
     public void onSocketReady(SocketThread thread, Socket socket) {
         putLog(String.format("%s %s", DATE_FORMAT.format(new Date()), "Socket is ready"));
-        Platform.runLater(() -> setEmptyCellUserList());
-        socketThread.sendMessage(Protocol.getAuthRequest(tfLogin.getText(), tfPassword.getText()));
+        Platform.runLater(this::setEmptyCellUserList);
+        socketThread.sendMessage(Protocol.getAuthRequest(tfLogin.getText().trim(), tfPassword.getText()));
     }
 
     @Override
